@@ -4,11 +4,11 @@
 
 **Unitats Formatives:** RA2 i RA3  
 **Curs:** 2n DAM · Videojocs  
-**Data:** ____________________  
+**Data:** 23/03/26 
 **Durada:** 2 hores  
 
-**Alumne/a:** ________________________________________________  
-**Grup:** __________________________________________________  
+**Alumne/a:** Edim Batalla  
+**Grup:** 2n DAM
 
 ---
 
@@ -42,7 +42,11 @@ Al projecte **Cars**, el widget `CarsPage` gestiona el número de pàgina actual
 **Resposta:**
 
 ```
-[Escriu la teva resposta aquí]
+setState() serveix per indicar que l’estat del widget ha canviat i que cal tornar a executar el mètode build per tornar a construir la interfície amb nous valors. 
+
+_loadPage() fa 2 crides separades perquè actualitza dos moments diferents l’estat:
+A l’inici per posar loading = true i mostrar a la UI que s’estan carregant dades.
+I al final per guardar la nova llista o el número de pàgina.
 ```
 
 ---
@@ -56,7 +60,7 @@ Al projecte **Camera**, el widget `CameraScreen` utilitza un `CameraController` 
 **Resposta:**
 
 ```
-[Escriu la teva resposta aquí]
+S’utilitza dispose(). i es crida _controller.dispose() per alliberar la càmera i la memòria.
 ```
 
 ---
@@ -70,7 +74,7 @@ Al projecte **Camera**, el widget `CameraScreen` utilitza un `CameraController` 
 **Resposta:**
 
 ```
-[Escriu la teva resposta aquí]
+No es pot fer await directament a initState() perquè aquest mètode ha de ser síncron. El Future es guarda a _initializeControllerFuture i FutureBuilder el fa servir per saber en quin estat està.
 ```
 
 ---
@@ -85,10 +89,23 @@ Què passaria si el servidor de l'API trigués 60 segons a respondre? L'aplicaci
 
 **Resposta:**
 
+Si el servidor triga molt l’app no es bloqueja perquè la crida és asíncrona però l’usuari es queda esperant. Per això s'utilitza timeout de 10 segons per exemple.
+
 ```dart
-// Escriu la modificació al getCarsPage aquí:
 Future<List<CarsModel>> getCarsPage(int page, int limit) async {
-  // ...
+  try {
+     final uri = _buildUri('/v1/cars', {'limit': '$limit', 'offset': '$offset'});
+
+
+    final response = await http
+        .get(uri)
+        .timeout(const Duration(seconds: 10));
+
+    if (response.statusCode !=200) {
+      throw Exception(
+        'Error ${response.statusCode}',
+      );
+    }
 }
 ```
 
@@ -103,7 +120,7 @@ Analitza el constructor `factory CarsModel.fromMapToCarObject(Map<String, dynami
 **Resposta:**
 
 ```
-[Escriu la teva resposta aquí]
+Cal convertir year  amb int.tryParse(...). Això evita errors si l’API envia un String en lloc d’un int.
 ```
 
 ---
@@ -113,7 +130,7 @@ Analitza el constructor `factory CarsModel.fromMapToCarObject(Map<String, dynami
 **Resposta:**
 
 ```
-[Escriu la teva resposta aquí]
+En un test unitari és millor simular el JSON perquè així el test no depèn d’internet ni de l’API. 
 ```
 
 ---
@@ -132,8 +149,6 @@ Imagina que volem crear una pantalla de detall per a cada cotxe del projecte Car
 4. Afegeix un botó `ElevatedButton` que, quan es premi, mostri un `SnackBar` amb el text: `"Cotxe seleccionat: [make] [model]"`.
 
 ```dart
-// Escriu el teu codi aquí:
-
 class CarDetailPage extends StatelessWidget {
   final CarsModel car;
 
@@ -141,7 +156,48 @@ class CarDetailPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // implementa aquí
+    final IconData carIcon = car.type == 'SUV'
+        ? Icons.directions_car
+        : Icons.car_rental;
+
+    return Scaffold(
+      appBar: AppBar(
+        title: const Text('Detall del cotxe'),
+      ),
+      body: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              '${car.make} ${car.model}',
+              style: const TextStyle(
+                fontSize: 24,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+            const SizedBox(height: 16),
+            Icon(
+              carIcon,
+              size: 48,
+            ),
+            const SizedBox(height: 24),
+            ElevatedButton(
+              onPressed: () {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(
+                    content: Text(
+                      'Cotxe seleccionat: ${car.make} ${car.model}',
+                    ),
+                  ),
+                );
+              },
+              child: const Text('Seleccionar cotxe'),
+            ),
+          ],
+        ),
+      ),
+    );
   }
 }
 ```
@@ -179,7 +235,35 @@ Exemples vàlids:
 **Implementa** el mètode `getCarsByFilter` a la classe `CarHttpService` existent, seguint el mateix patrons que `getCarsPage`:
 
 ```dart
-// Afegeix aquest mètode a car_http_service.dart:
+Future<List<CarsModel>> getCarsByFilter({
+  String? make,
+  String? model,
+}) async {
+  try {
+    final queryParams = <String, String> {};
+
+    if (make != null && make.isNotEmpty) {
+      queryParams['make'] = make;
+    }
+
+    if (model != null && model.isNotEmpty) {
+      queryParams['model'] = model;
+    }
+
+    final uri = _buildUri('/v1/cars/search', queryParams);
+
+    final response = await http
+        .get(uri, headers: -headers)
+        .timeout(const Duration(seconds: 10));
+
+    if (response.statusCode == 200) {
+      final List<dynamic> jsonList = jsonDecode(response.body);
+      return jsonList
+          .map((json) => CarsModel.fromMapToCarObject(json))
+          .toList();
+    }
+  }
+}
 ```
 
 Requisits:
@@ -191,6 +275,7 @@ Requisits:
 **Resposta:**
 
 ```dart
+
 // Escriu aquí la teva implementació completa del mètode:
 
 ```
